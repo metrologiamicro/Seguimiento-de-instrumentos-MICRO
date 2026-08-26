@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Instrument } from "../types/instrument";
 import { InstrumentService } from "../services/instrumentService";
 
@@ -6,10 +6,7 @@ export function useInstruments() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState<string>("");
-  const [debouncedQuery, setDebouncedQuery] = useState<string>("");
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     let isMounted = true;
@@ -25,7 +22,7 @@ export function useInstruments() {
       })
       .catch(err => {
         if (isMounted) {
-          setError(err.message || "Error al cargar la planilla");
+          setError(err.message || "Error al cargar los instrumentos");
           setLoading(false);
         }
       });
@@ -35,25 +32,18 @@ export function useInstruments() {
     };
   }, []);
 
-  const handleQueryChange = useCallback((newQuery: string) => {
-    setQuery(newQuery);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      setDebouncedQuery(newQuery);
-    }, 260);
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
   }, []);
 
-  const filteredInstruments = InstrumentService.filterInstruments(instruments, debouncedQuery);
+  const filteredInstruments = InstrumentService.filterInstruments(instruments, searchQuery);
 
   return {
     loading,
     error,
-    query,
-    debouncedQuery,
+    searchQuery,
     filteredInstruments,
     totalCount: instruments.length,
-    handleQueryChange,
+    handleSearch,
   };
 }

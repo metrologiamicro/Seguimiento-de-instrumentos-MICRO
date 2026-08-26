@@ -11,10 +11,9 @@ export const App: React.FC = () => {
   const {
     loading,
     error,
-    query,
-    debouncedQuery,
+    searchQuery,
     filteredInstruments,
-    handleQueryChange,
+    handleSearch,
   } = useInstruments();
 
   const renderContent = () => {
@@ -26,12 +25,12 @@ export const App: React.FC = () => {
       return <StateMessage type="error" errorMessage={error} />;
     }
 
-    if (!debouncedQuery.trim()) {
+    if (!searchQuery.trim()) {
       return <StateMessage type="initial" />;
     }
 
     if (filteredInstruments.length === 0) {
-      return <StateMessage type="empty" query={debouncedQuery} />;
+      return <StateMessage type="empty" query={searchQuery} />;
     }
 
     return filteredInstruments.map(inst => (
@@ -42,7 +41,7 @@ export const App: React.FC = () => {
   return (
     <>
       <Header />
-      <SearchBar value={query} onChange={handleQueryChange} />
+      <SearchBar onSearch={handleSearch} debounceMs={300} />
       <main className="main" id="result">
         {renderContent()}
       </main>

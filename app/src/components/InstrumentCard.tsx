@@ -14,7 +14,7 @@ const ICONS = {
   none: "—",
 };
 
-export const InstrumentCard: React.FC<InstrumentCardProps> = ({ instrument }) => {
+export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instrument }) => {
   const est = InstrumentService.calculateStatus(instrument.vto, instrument.aviso);
   const dias = est.diasRemaining;
 
@@ -76,4 +76,4 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = ({ instrument }) =>
       </div>
     </div>
   );
-};
+});
