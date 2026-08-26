@@ -1,42 +1,79 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Instrument } from "../types/instrument";
 import { InstrumentService } from "../services/instrumentService";
+import type { WorkerResponse } from "../workers/filterWorker";
 
 export function useInstruments() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filteredInstruments, setFilteredInstruments] = useState<Instrument[]>([]);
 
+  const workerRef = useRef<Worker | null>(null);
+
+  // Inicializar Web Worker en un hilo secundario
   useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
+    const worker = new Worker(
+      new URL("../workers/filterWorker.ts", import.meta.url),
+      { type: "module" }
+    );
 
-    InstrumentService.fetchInstruments()
-      .then(data => {
-        if (isMounted) {
-          setInstruments(data);
-          setLoading(false);
-        }
-      })
-      .catch(err => {
-        if (isMounted) {
-          setError(err.message || "Error al cargar los instrumentos");
-          setLoading(false);
-        }
-      });
+    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const { type, payload } = event.data;
+      if (type === "FILTER_RESULT") {
+        setFilteredInstruments(payload);
+      }
+    };
+
+    workerRef.current = worker;
 
     return () => {
-      isMounted = false;
+      worker.terminate();
     };
   }, []);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await InstrumentService.fetchInstruments();
+      setInstruments(data);
+      setLoading(false);
+
+      if (workerRef.current) {
+        workerRef.current.postMessage({
+          type: "INIT_DATA",
+          payload: data,
+        });
+        if (searchQuery) {
+          workerRef.current.postMessage({
+            type: "FILTER",
+            payload: searchQuery,
+          });
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Error al cargar los instrumentos");
+      setLoading(false);
+    }
+  }, [searchQuery]);
+
+  // Carga inicial de datos desde Supabase
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Manejador de búsqueda que delega el filtrado al Web Worker
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
+    if (workerRef.current) {
+      workerRef.current.postMessage({
+        type: "FILTER",
+        payload: query,
+      });
+    }
   }, []);
-
-  const filteredInstruments = InstrumentService.filterInstruments(instruments, searchQuery);
 
   return {
     loading,
@@ -45,5 +82,6 @@ export function useInstruments() {
     filteredInstruments,
     totalCount: instruments.length,
     handleSearch,
+    reloadInstruments: loadData,
   };
 }
