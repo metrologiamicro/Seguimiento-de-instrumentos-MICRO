@@ -5,6 +5,13 @@ export interface Instrument {
   calibrado: string;
   vto: string;
   aviso: string;
+  operarioMarca?: string;
+  disponibilidad?: string;
+  identificacion?: string;
+  tipoInstrumento?: string;
+  maquina?: string;
+  retiradoPor?: string;
+  fechaRetiro?: string;
 }
 
 export type StatusKey = 'ok' | 'warn' | 'danger' | 'none';
