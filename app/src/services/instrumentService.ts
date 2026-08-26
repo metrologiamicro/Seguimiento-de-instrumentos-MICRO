@@ -1,43 +1,39 @@
 import type { Instrument, InstrumentStatus } from "../types/instrument";
 import { diffDays } from "../utils/dateUtils";
-import { parseCSV, findHeaderRow } from "./csvParserService";
+import { supabase } from "./supabaseClient";
 
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQO2xlTCHWbylhgjp9Tlv-0HM6z0ZlXzh3i-VYxNgiNUwwC2g1ZZ4nLHguumRm2uTU1Ql1KV23efn7g/pub?gid=1657588836&single=true&output=csv";
+interface SupabaseInstrumentRow {
+  codigo: string | null;
+  nombre: string | null;
+  sector: string | null;
+  estado_calibracion?: string | null;
+  fecha_ultima_calibracion?: string | null;
+  fecha_vencimiento_calibracion?: string | null;
+  [key: string]: unknown;
+}
 
 export class InstrumentService {
   public static async fetchInstruments(): Promise<Instrument[]> {
-    const response = await fetch(CSV_URL);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    const { data, error } = await supabase
+      .from("instrumentos")
+      .select("*");
+
+    if (error) {
+      console.error("Error fetching from Supabase:", error);
+      throw new Error(`Supabase Error: ${error.message}`);
     }
-    const text = await response.text();
-    const rows = parseCSV(text);
-    const hi = findHeaderRow(rows);
-    const H = rows[hi].map(h => h.toUpperCase().trim());
 
-    const idx = (name: string): number => {
-      let i = H.findIndex(h => h === name);
-      if (i === -1) i = H.findIndex(h => h.includes(name));
-      return i;
-    };
+    if (!data) return [];
 
-    const iCod = idx("CODIGO");
-    const iNom = idx("INSTRUMENTO");
-    const iSec = idx("SECTOR");
-    const iCal = idx("CALIBRADO");
-    const iVto = idx("VENCIMIENTO");
-    const iAvis = idx("AVISO");
-
-    const list: Instrument[] = rows
-      .slice(hi + 1, hi + 2001)
-      .filter(r => r[iNom] && r[iNom].trim())
+    const list: Instrument[] = (data as SupabaseInstrumentRow[])
+      .filter(r => r.nombre && r.nombre.trim())
       .map(r => ({
-        codigo: (r[iCod] || "").trim(),
-        nombre: (r[iNom] || "").trim(),
-        sector: (r[iSec] || "").trim(),
-        calibrado: (r[iCal] || "").trim(),
-        vto: (r[iVto] || "").trim(),
-        aviso: (r[iAvis] || "").trim(),
+        codigo: (r.codigo || "").trim(),
+        nombre: (r.nombre || "").trim(),
+        sector: (r.sector || "").trim(),
+        calibrado: (r.fecha_ultima_calibracion || "").trim(),
+        vto: (r.fecha_vencimiento_calibracion || "").trim(),
+        aviso: (r.fecha_vencimiento_calibracion || "").trim(), // Usa fecha vencimiento para alerta si no existe aviso explícito
       }));
 
     return list;
@@ -53,7 +49,8 @@ export class InstrumentService {
     if (dias < 0) {
       return { key: "danger", label: "VENCIDO", diasRemaining: dias };
     }
-    if (diasAviso !== null && diasAviso <= 0) {
+    // Si quedan <= 30 días o si fecha aviso es <= hoy, marcar por vencer
+    if ((diasAviso !== null && diasAviso <= 0) || dias <= 30) {
       return { key: "warn", label: "Por vencer", diasRemaining: dias };
     }
     return { key: "ok", label: "APTO", diasRemaining: dias };
