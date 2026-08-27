@@ -9,6 +9,32 @@ export type WorkerResponse =
 
 let allInstruments: Instrument[] = [];
 
+function matchesQuery(
+  val: string | undefined | null,
+  rawQuery: string,
+  strippedQuery: string,
+  queryWords: string[]
+): boolean {
+  if (!val) return false;
+  const lowerVal = val.toLowerCase();
+  const strippedVal = lowerVal.replace(/\s+/g, "");
+
+  // 1. Coincidencia ignorando espacios por completo (ej: "M4X0,7" == "M 4 X 0 , 7")
+  if (strippedVal.includes(strippedQuery)) return true;
+
+  // 2. Coincidencia directa con la consulta original
+  if (lowerVal.includes(rawQuery)) return true;
+
+  // 3. Coincidencia por palabras individuales
+  if (queryWords.length > 1) {
+    return queryWords.every(
+      w => lowerVal.includes(w) || strippedVal.includes(w)
+    );
+  }
+
+  return false;
+}
+
 self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   const { type, payload } = event.data;
 
@@ -18,8 +44,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   }
 
   if (type === "FILTER") {
-    const q = payload.trim().toLowerCase();
-    if (!q) {
+    const rawQuery = payload.trim().toLowerCase();
+    if (!rawQuery) {
       const response: WorkerResponse = {
         type: "FILTER_RESULT",
         payload: [],
@@ -29,16 +55,18 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       return;
     }
 
-    const filtered = allInstruments.filter(
-      i =>
-        i.codigo.toLowerCase().includes(q) ||
-        i.nombre.toLowerCase().includes(q) ||
-        i.sector.toLowerCase().includes(q) ||
-        (i.operarioMarca && i.operarioMarca.toLowerCase().includes(q)) ||
-        (i.disponibilidad && i.disponibilidad.toLowerCase().includes(q)) ||
-        (i.identificacion && i.identificacion.toLowerCase().includes(q)) ||
-        (i.tipoInstrumento && i.tipoInstrumento.toLowerCase().includes(q)) ||
-        (i.maquina && i.maquina.toLowerCase().includes(q))
+    const strippedQuery = rawQuery.replace(/\s+/g, "");
+    const queryWords = rawQuery.split(/\s+/).filter(Boolean);
+
+    const filtered = allInstruments.filter(i =>
+      matchesQuery(i.codigo, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.nombre, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.sector, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.operarioMarca, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.disponibilidad, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.identificacion, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.tipoInstrumento, rawQuery, strippedQuery, queryWords) ||
+      matchesQuery(i.maquina, rawQuery, strippedQuery, queryWords)
     );
 
     const response: WorkerResponse = {

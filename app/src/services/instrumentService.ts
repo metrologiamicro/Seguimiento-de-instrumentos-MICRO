@@ -110,18 +110,37 @@ export class InstrumentService {
   }
 
   public static filterInstruments(instruments: Instrument[], query: string): Instrument[] {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
+    const rawQuery = query.trim().toLowerCase();
+    if (!rawQuery) return [];
+
+    const strippedQuery = rawQuery.replace(/\s+/g, "");
+    const queryWords = rawQuery.split(/\s+/).filter(Boolean);
+
+    const matchesQuery = (val: string | undefined | null): boolean => {
+      if (!val) return false;
+      const lowerVal = val.toLowerCase();
+      const strippedVal = lowerVal.replace(/\s+/g, "");
+
+      if (strippedVal.includes(strippedQuery)) return true;
+      if (lowerVal.includes(rawQuery)) return true;
+
+      if (queryWords.length > 1) {
+        return queryWords.every(w => lowerVal.includes(w) || strippedVal.includes(w));
+      }
+      return false;
+    };
+
     return instruments.filter(
       i =>
-        i.codigo.toLowerCase().includes(q) ||
-        i.nombre.toLowerCase().includes(q) ||
-        i.sector.toLowerCase().includes(q) ||
-        (i.operarioMarca && i.operarioMarca.toLowerCase().includes(q)) ||
-        (i.disponibilidad && i.disponibilidad.toLowerCase().includes(q)) ||
-        (i.identificacion && i.identificacion.toLowerCase().includes(q)) ||
-        (i.tipoInstrumento && i.tipoInstrumento.toLowerCase().includes(q)) ||
-        (i.maquina && i.maquina.toLowerCase().includes(q))
+        matchesQuery(i.codigo) ||
+        matchesQuery(i.nombre) ||
+        matchesQuery(i.sector) ||
+        matchesQuery(i.operarioMarca) ||
+        matchesQuery(i.disponibilidad) ||
+        matchesQuery(i.identificacion) ||
+        matchesQuery(i.tipoInstrumento) ||
+        matchesQuery(i.maquina)
     );
   }
 }
+
