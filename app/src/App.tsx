@@ -116,13 +116,15 @@ export const App: React.FC = () => {
 
   return (
     <>
-      <Header
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        onSync={handleSync}
-        isSyncing={isSyncing}
-      />
-      <SearchBar onSearch={handleSearch} debounceMs={250} />
+      <div className="sticky-top-zone">
+        <Header
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onSync={handleSync}
+          isSyncing={isSyncing}
+        />
+        <SearchBar onSearch={handleSearch} debounceMs={250} />
+      </div>
       <main className="main" id="result">
         {renderContent()}
       </main>
