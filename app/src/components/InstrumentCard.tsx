@@ -22,11 +22,11 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instr
   if (dias !== null) {
     if (dias < 0) {
       const absDias = Math.abs(dias);
-      diasText = `Venció hace ${absDias} día${absDias === 1 ? "" : "s"}`;
+      diasText = `Venció hace ${absDias} d`;
     } else if (dias === 0) {
       diasText = "Vence hoy";
     } else {
-      diasText = `${dias} día${dias === 1 ? "" : "s"} restante${dias === 1 ? "" : "s"}`;
+      diasText = `${dias} d restantes`;
     }
   } else {
     diasText = "Sin fecha";
@@ -34,11 +34,20 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instr
 
   const isEnUso = instrument.disponibilidad?.trim().toUpperCase() === "EN USO";
 
+  let infoUsoText = "";
+  if (instrument.maquina) {
+    infoUsoText = instrument.maquina;
+  } else if (instrument.retiradoPor) {
+    infoUsoText = `Retirado por ${instrument.retiradoPor}`;
+  } else {
+    infoUsoText = "En uso";
+  }
+
   return (
     <div className="card">
       <div className={`card-stripe stripe-${est.key}`}></div>
       <div className="card-body">
-        {/* ENCABEZADO DE LA CARD: Código, Badge ID y Semáforo de Aptitud */}
+        {/* ENCABEZADO: Código, Badge ID y Semáforo */}
         <div className="card-head">
           <div className="card-meta">
             <div className="code-row">
@@ -60,13 +69,13 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instr
           </div>
         </div>
 
-        {/* BLOQUE DE NOMBRE / DESCRIPCIÓN COMPLETA */}
+        {/* NOMBRE / DESCRIPCIÓN */}
         <div className="name-block">
           <label>Nombre / Descripción Completa</label>
           <div className="name-val">{instrument.nombre}</div>
         </div>
 
-        {/* GRILLA DE DATOS TÉCNICOS EN CAJAS */}
+        {/* GRILLA DE DATOS TÉCNICOS */}
         <div className="card-grid">
           {instrument.tipoInstrumento ? (
             <div className="field-box">
@@ -77,7 +86,7 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instr
 
           {instrument.operarioMarca ? (
             <div className="field-box">
-              <label>Marca / Marca Operario</label>
+              <label>Marca / Operario</label>
               <div className="val">{instrument.operarioMarca}</div>
             </div>
           ) : null}
@@ -116,34 +125,15 @@ export const InstrumentCard: React.FC<InstrumentCardProps> = React.memo(({ instr
               </div>
             </div>
           ) : null}
-        </div>
 
-        {/* BLOQUE RESUMIDO DE CUSTODIA Y RETIRO (Máquina / Operario cuando posee datos o está EN USO) */}
-        {(instrument.maquina || isEnUso) && (
-          <div className="custodia-box">
-            <div className="custodia-title">Información de Custodia y Retiro</div>
-            <div className="custodia-grid">
-              {instrument.maquina ? (
-                <div className="custodia-row">
-                  <span className="lbl">Máquina / Destino:</span>
-                  <span className="val bold">{instrument.maquina}</span>
-                </div>
-              ) : null}
-              {instrument.retiradoPor ? (
-                <div className="custodia-row">
-                  <span className="lbl">Retirado por:</span>
-                  <span className="val">{instrument.retiradoPor}</span>
-                </div>
-              ) : null}
-              {instrument.fechaRetiro ? (
-                <div className="custodia-row">
-                  <span className="lbl">Fecha Retiro:</span>
-                  <span className="val mono">{instrument.fechaRetiro}</span>
-                </div>
-              ) : null}
+          {/* Muestra únicamente la celda de Información de Uso cuando el instrumento está EN USO */}
+          {isEnUso ? (
+            <div className="field-box">
+              <label>Información de Uso</label>
+              <div className="val">{infoUsoText}</div>
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
       </div>
     </div>
   );
