@@ -42,7 +42,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <input
           type="text"
           id="buscar"
-          value={value}
+          value={value.toUpperCase()}
           onChange={handleChange}
           placeholder="Código, nombre o sector…"
           autoComplete="off"
