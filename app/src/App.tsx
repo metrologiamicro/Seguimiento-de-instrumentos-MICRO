@@ -29,6 +29,19 @@ export const App: React.FC = () => {
 
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
 
+  // Forzar título de la pestaña y desregistrar cualquier Service Worker / PWA previo alojado en el mismo puerto
+  useEffect(() => {
+    document.title = "Seguimiento de Instrumentos • MiCRO Automación";
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+  }, []);
+
   // Reiniciar la cantidad de items visibles al cambiar la búsqueda o el resultado
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
