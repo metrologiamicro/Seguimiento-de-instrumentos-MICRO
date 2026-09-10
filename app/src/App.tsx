@@ -133,8 +133,8 @@ export const App: React.FC = () => {
         <Header
           theme={theme}
           onToggleTheme={toggleTheme}
-          onSync={false}
-          isSyncing={false}
+          onSync={handleSync}
+          isSyncing={isSyncing}
         />
         <SearchBar onSearch={handleSearch} debounceMs={250} />
       </div>
