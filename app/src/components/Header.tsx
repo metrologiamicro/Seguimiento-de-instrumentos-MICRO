@@ -17,8 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const a = onSync //Para evitar errores por el boton comentado
   const b = isSyncing //Para evitar errores por el boton comentado
-  if(a && b):
-    console.log("Sincronizacion desactivada")
+  if(a && b) console.log("Sincronizacion desactivada")
   
   return (
     <header className="header">
