@@ -15,6 +15,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSync,
   isSyncing = false,
 }) => {
+  const a = onSync //Para evitar errores por el boton comentado
+  const b = isSyncing //Para evitar errores por el boton comentado
   return (
     <header className="header">
       <div className="hdr-left">
